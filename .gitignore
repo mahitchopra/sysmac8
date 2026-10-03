@@ -1,0 +1,61 @@
+# =========================
+# Python
+# =========================
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# =========================
+# Cocotb / simulation
+# =========================
+
+sim/sim_build/
+sim/results.xml
+*.vcd
+*.fst
+*.wlf
+*.vvp
+*.log
+
+# =========================
+# Vivado
+# =========================
+
+*.jou
+*.str
+*.backup.log
+
+# Vivado generated directories
+vivado_project/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.gen/
+
+# =========================
+# OS / editor
+# =========================
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# Python tooling
+# =========================
+
+.pytest_cache/
+.mypy_cache/
+
+# =========================
+# Temporary files
+# =========================
+
+*.tmp
+*.swp
