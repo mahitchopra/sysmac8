@@ -18,7 +18,7 @@ async def test_multiplier_exhaustive(dut):
             
             # Calculate expected and capture actual RTL output
             expected = a * b
-            actual = dut.prod_out.value.signed_integer
+            actual = dut.prod_out.value.to_signed()
             
             # Check result
             assert actual == expected, (

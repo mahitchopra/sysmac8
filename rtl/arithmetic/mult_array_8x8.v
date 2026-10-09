@@ -9,9 +9,7 @@ module mult_array_8x8 #(
     output wire signed [15:0] prod_out
 );
 
-    // -------------------------------------------------------------------------
     // Baugh-Wooley Partial Product Generation
-    // -------------------------------------------------------------------------
     wire [15:0] pp0, pp1, pp2, pp3, pp4, pp5, pp6, pp7;
 
     // Rows 0 to 6: Multiply standard bits of 'b' against 'a'. 
@@ -31,18 +29,14 @@ module mult_array_8x8 #(
     // so it remains a standard AND gate.
     assign pp7 = { 1'b0,  (a_in[7] & b_in[7]), ~(a_in[6:0] & {7{b_in[7]}}), 7'b0 };
 
-    // -------------------------------------------------------------------------
     // Baugh-Wooley Compensation Constant
-    // -------------------------------------------------------------------------
     // To complete the two's complement arithmetic without sign-extending every row,
     // the Baugh-Wooley algorithm adds a pre-calculated mathematical constant.
     // For an 8x8 signed multiplier, we add a '1' to column 8 (2^8) and column 15 (2^15).
     // 16'h8100 = 1000_0001_0000_0000 in binary.
     wire [15:0] bw_constant = 16'h8100;
 
-    // -------------------------------------------------------------------------
     // Combinational Summation Tree
-    // -------------------------------------------------------------------------
     // The synthesizer will automatically map this addition into a fast combinational 
     // adder tree (e.g., carry-lookahead or carry-save tree) without using the '*' operator.
     assign prod_out = pp0 + 
