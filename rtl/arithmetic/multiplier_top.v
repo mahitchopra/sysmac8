@@ -1,4 +1,4 @@
-
+// WRAPPER MODULE
 module multiplier_top #(
     parameter ARCH = "ARRAY"
 )(
