@@ -1,23 +1,35 @@
-// rtl/core/requantizer.v
-`timescale 1ns / 1ps
-
 module requantizer (
     input  wire signed [25:0] accum_in,
-    input  wire [4:0]         shift_val,  // Scaling factor determined during Python quantization
-    output wire signed [7:0]  act_out
+    input  wire        [4:0]  shift_val,
+    output reg  signed [7:0]  act_out
 );
 
-    // 1. Rounding: Add 2^(shift_val - 1) before shifting to round to nearest integer.
-    // If shift_val is 0, we add nothing.
-    wire signed [25:0] round_add = (shift_val > 0) ? (26'sd1 <<< (shift_val - 1)) : 26'sd0;
-    
-    // 2. Arithmetic Right Shift (Scaling)
-    wire signed [25:0] scaled = (accum_in + round_add) >>> shift_val;
+    // Extend the accumulator before adding the rounding offset.
+    // A 26-bit addition can overflow near ACC_MAX.
+    wire signed [31:0] accum_ext =
+        {{6{accum_in[25]}}, accum_in};
 
-    // 3. ReLU Activation: If the sign bit (MSB) is 1, output 0. Otherwise, pass through.
-    wire signed [25:0] relu_val = (scaled[25]) ? 26'sd0 : scaled;
+    // 32-bit signed rounding offset supports shift values 0..31.
+    wire signed [31:0] round_add =
+        (shift_val > 0)
+        ? (32'sd1 <<< (shift_val - 1))
+        : 32'sd0;
 
-    // 4. Saturation: Clamp to maximum INT8 value (127)
-    assign act_out = (relu_val > 26'sd127) ? 8'sd127 : relu_val[7:0];
+    wire signed [31:0] rounded =
+        accum_ext + round_add;
+
+    // Arithmetic right shift preserves the sign.
+    wire signed [31:0] scaled =
+        rounded >>> shift_val;
+
+    // ReLU followed by saturation to [0, 127].
+    always @(*) begin
+        if (scaled < 0)
+            act_out = 8'sd0;
+        else if (scaled > 127)
+            act_out = 8'sd127;
+        else
+            act_out = scaled[7:0];
+    end
 
 endmodule

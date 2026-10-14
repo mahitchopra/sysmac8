@@ -1,0 +1,11 @@
+input_exponent=-7
+w1_exponent=-7
+b1_exponent=-14
+activation1_exponent=-2
+layer1_right_shift=12
+w2_exponent=-7
+b2_exponent=-9
+layer2_right_shift=0
+weight_quantization=symmetric_signed_int8
+activation_quantization=unsigned_range_0_to_127_in_int8
+hex_encoding=low_bits_twos_complement_one_word_per_line
