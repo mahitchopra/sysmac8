@@ -28,9 +28,15 @@ GRID_SOURCES = \
 TOP_SOURCES = \
     $(GRID_SOURCES) \
     $(CONTROL_SOURCES) \
+    $(RTL)/top/argmax.v \
     $(RTL)/top/sysmac8_top.v
 
-ifeq ($(TEST),requantizer)
+ifeq ($(TEST),multiplier)
+    TOPLEVEL = multiplier_top
+    COCOTB_TEST_MODULES = tb_multiplier
+    VERILOG_SOURCES = $(ARITH_SOURCES)
+
+else ifeq ($(TEST),requantizer)
     TOPLEVEL = requantizer
     COCOTB_TEST_MODULES = tb_requantizer
     VERILOG_SOURCES = $(RTL)/core/requantizer.v
@@ -66,8 +72,26 @@ else ifeq ($(TEST),top_mac)
     COCOTB_TEST_MODULES = tb_top_mac
     VERILOG_SOURCES = $(TOP_SOURCES)
 
+else ifeq ($(TEST),k_tile_accum)
+    TOPLEVEL = sysmac8_top
+    COCOTB_TEST_MODULES = tb_k_tile_accum
+    VERILOG_SOURCES = $(TOP_SOURCES)
+    SIM_BUILD = $(ROOT)/sim_build/k_tile_accum
+
+else ifeq ($(TEST),layer1_golden)
+    TOPLEVEL = sysmac8_top
+    COCOTB_TEST_MODULES = tb_layer1_golden
+    VERILOG_SOURCES = $(TOP_SOURCES)
+    SIM_BUILD = $(ROOT)/sim_build/layer1_golden
+
+else ifeq ($(TEST),mnist_infer)
+    TOPLEVEL = sysmac8_top
+    COCOTB_TEST_MODULES = tb_mnist_infer
+    VERILOG_SOURCES = $(TOP_SOURCES)
+    SIM_BUILD = $(ROOT)/sim_build/mnist_infer
+
 else
-    $(error Unknown TEST='$(TEST)'. Choose requantizer, pe, systolic, grid_mac, controller, top, or top_mac)
+    $(error Unknown TEST='$(TEST)'. Choose multiplier, requantizer, pe, systolic, grid_mac, controller, top, top_mac, k_tile_accum, layer1_golden, or mnist_infer)
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

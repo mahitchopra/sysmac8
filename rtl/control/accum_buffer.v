@@ -1,3 +1,6 @@
+// rtl/control/accum_buffer.v
+`timescale 1ns / 1ps
+
 module accum_buffer (
     input  wire               clk,
     input  wire               rst_n,
@@ -25,10 +28,13 @@ module accum_buffer (
             if (we) begin
                 mem_c0[addr] <= d_in_c0; mem_c1[addr] <= d_in_c1;
                 mem_c2[addr] <= d_in_c2; mem_c3[addr] <= d_in_c3;
+                // Write-first bypass so q_out is valid on the immediately following REQUANT cycle
+                q_out_c0 <= d_in_c0;     q_out_c1 <= d_in_c1;
+                q_out_c2 <= d_in_c2;     q_out_c3 <= d_in_c3;
+            end else begin
+                q_out_c0 <= mem_c0[addr]; q_out_c1 <= mem_c1[addr];
+                q_out_c2 <= mem_c2[addr]; q_out_c3 <= mem_c3[addr];
             end
-            // Read is synchronous
-            q_out_c0 <= mem_c0[addr]; q_out_c1 <= mem_c1[addr];
-            q_out_c2 <= mem_c2[addr]; q_out_c3 <= mem_c3[addr];
         end
     end
 endmodule
