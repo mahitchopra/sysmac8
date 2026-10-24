@@ -2,7 +2,13 @@
 `timescale 1ns / 1ps
 
 module sysmac8_top #(
+    `ifdef SYSMAC8_ARCH_ARRAY
+    parameter ARCH = "ARRAY"
+`elsif SYSMAC8_ARCH_BOOTH_WALLACE
     parameter ARCH = "BOOTH_WALLACE"
+`else
+    parameter ARCH = "BOOTH_WALLACE"
+`endif
 )(
     input  wire clk,
     input  wire rst_n,

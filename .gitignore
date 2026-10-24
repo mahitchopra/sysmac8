@@ -59,3 +59,9 @@ Thumbs.db
 
 *.tmp
 *.swp
+# Root-level generated simulation builds
+/sim_build/
+/sim/build/
+
+# Downloaded MNIST dataset (kept locally)
+/data_mnist/MNIST/raw/

@@ -1,6 +1,12 @@
 // WRAPPER MODULE
 module multiplier_top #(
+    `ifdef SYSMAC8_ARCH_ARRAY
     parameter ARCH = "ARRAY"
+`elsif SYSMAC8_ARCH_BOOTH_WALLACE
+    parameter ARCH = "BOOTH_WALLACE"
+`else
+    parameter ARCH = "ARRAY"
+`endif
 )(
     input  wire signed [7:0]  a_in,
     input  wire signed [7:0]  b_in,

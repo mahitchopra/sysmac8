@@ -1,8 +1,8 @@
 # SysMAC8 — 4x4 Signed INT8 Systolic Array Neural Network Accelerator
 
-**Repository:** `C:\Users\chopr\sysmac8` (`/c/Users/chopr/sysmac8` in MSYS2 UCRT64)  
-**Target Network:** Quantized MNIST Classifier (`784 -> 32 -> ReLU -> 10 -> Argmax`)  
-**Toolchain:** Verilog-2001, Icarus Verilog / VVP 13.0, Cocotb 2.1.0, Python 3.12.10, PyTorch, Xilinx Vivado (batch synthesis)
+**Repository:** `sysmac8-main` (run commands from your local repository clone)
+**Target Network:** Quantized MNIST Classifier (`784 -> 32 -> ReLU -> 10 -> Argmax`)
+**Toolchain:** Verilog-2001, Icarus Verilog / VVP 13.0, Cocotb 2.1.0, Python 3.14.0, PyTorch, Xilinx Vivado (batch synthesis)
 
 ## 1. Architecture Overview
 
@@ -18,7 +18,7 @@ SysMAC8 is a weight-stationary 4x4 signed INT8 systolic array accelerator execut
   - `systolic_grid_4x4.v`: 4x4 PE array with `activation_en` input gating and row-wise weight broadcast (`weight_en_row`).
   - `requantizer.v`: Sign-extends `accum_in[25:0]` to 32 bits, adds rounding offset `1 << (shift_val - 1)`, performs arithmetic right shift, applies ReLU, and saturates to `[0, 127]`.
 - **Control & On-Chip Buffers (`rtl/control/`)**:
-  - `controller_fsm.v`: 7-state FSM (`IDLE`, `LOAD_W`, `STREAM`, `DRAIN`, `REQUANT`, `WRITEBACK`, `DONE_STATE`) sequencing 196 K-tiles x 8 N-tiles in Layer 1 (`layer_idx = 0`) and 8 K-tiles x 3 N-tiles in Layer 2 (`layer_idx = 1`) in **25,495 clock cycles per image**.
+  - `controller_fsm.v`: 7-state FSM (`IDLE`, `LOAD_W`, `STREAM`, `DRAIN`, `REQUANT`, `WRITEBACK`, `DONE_STATE`) sequencing 196 K-tiles x 8 N-tiles in Layer 1 (`layer_idx = 0`) and 8 K-tiles x 3 N-tiles in Layer 2 (`layer_idx = 1`) in **25,495 controller schedule cycles**; the end-to-end Cocotb monitor reports **25,496 cycles per image**.
   - `accum_buffer.v`: 8-row x 4-column x 26-bit signed accumulator buffer with write-first read bypass (`q_out <= d_in` when `we == 1`) so completed N-tile sums are immediately valid on `accum_q_c0..c3` during `REQUANT`/`WRITEBACK`.
   - `buffer_ram.v`: Parameterized simple dual-port synchronous RAM instantiated as 4 banks (`u_act_buf_r0..r3`, 8x8-bit each) in `sysmac8_top.v` to store the 32 Layer 1 requantized activations and feed them into Layer 2 automatically.
 - **Top-Level Integration & Classification (`rtl/top/`)**:
@@ -37,15 +37,15 @@ Each `(n_tile_idx, k_tile_idx)` tile runs for **16 clock cycles**:
 
 ### 3.1 Python Quantization & Golden Reference (PowerShell)
 ```powershell
-cd C:\Users\chopr\sysmac8
-.\.venv\Scripts\python.exe -m model.golden_model
-.\.venv\Scripts\python.exe model\evaluate_quantized.py
+# Run from the repository root
+python -m model.golden_model
+python model\evaluate_quantized.py
 ```
 
 ### 3.2 RTL & Cocotb Regression Suite (MSYS2 UCRT64)
 ```bash
-export PATH="/c/Users/chopr/sysmac8/.venv/Scripts:$PATH"
-cd /c/Users/chopr/sysmac8/sim
+export PATH="$(cygpath -u "$APPDATA")/Python/Python314/Scripts:$PATH"
+cd sim  # run from the repository root in MSYS2 UCRT64
 
 # Unit & multiplier architecture tests (both ARRAY and BOOTH_WALLACE)
 make clean && make TEST=multiplier_array
@@ -71,10 +71,10 @@ make clean && make TEST=mnist_infer ARCH=ARRAY
 
 ### 3.3 Vivado Synthesis Comparison (Stage 5)
 ```powershell
-cd C:\Users\chopr\sysmac8
+# Run from the repository root
 vivado -mode batch -source syn/run_synth.tcl
 ```
-Reports for `multiplier_top` and `sysmac8_top` under both `ARCH="ARRAY"` and `ARCH="BOOTH_WALLACE"` are generated in `syn/reports/`.
+The synthesis script has not yet been executed with Vivado. If both architecture runs complete successfully, reports should be generated under `syn/reports/`. No FPGA resource, timing, or power measurements have been established.
 
 ## 4. Verification Summary & Known Limitations
 
@@ -87,4 +87,4 @@ Reports for `multiplier_top` and `sysmac8_top` under both `ARCH="ARRAY"` and `AR
   - `tb_layer1_golden.py` & `tb_mnist_infer.py`: `100%` bit-exact match against `model/golden_model.py` across all 32 Layer 1 accumulators, 32 Layer 1 activations, 10 Layer 2 logits (`[-2701, -3208, -1496, 3178, -8540, 4063, -4892, -2413, -3024, -1931]`), and `pred_class = 5` (`max_logit = 4063`) on `sample_img.hex` and 3 additional test vectors (including partial-tile unused-column poisoning).
 - **Known Limitations**:
   - Weights (`w1`, `w2`), biases (`b1`, `b2`), and Layer 1 input pixels stream across top-level buses indexed by `(layer_idx, n_tile_idx, k_tile_idx)` rather than being stored in a dedicated 75 KB on-chip weight ROM.
-  - Each image executes at batch size 1 in `25,495` clock cycles.
+  - Each image is processed at batch size 1. The controller schedule is documented as 25,495 FSM cycles, while the end-to-end Cocotb monitor reports 25,496 cycles per image.
