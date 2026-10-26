@@ -78,13 +78,14 @@ The synthesis script has not yet been executed with Vivado. If both architecture
 
 ## 4. Verification Summary & Known Limitations
 
-- **Software 10,000-Image MNIST Benchmark (`model/evaluate_quantized.py`)**: `95.12%` FP32 accuracy, `95.13%` INT8 quantized accuracy, `99.60%` prediction agreement (`40/10,000` disagreements), zero 26-bit accumulator overflows (`acc1` in `[-76,972, +199,708]`, `acc2` in `[-14,464, +11,452]`).
+- **Software 10,000-Image MNIST Benchmark (`model/evaluate_quantized.py`)**: `95.12%` FP32 accuracy, `95.13%` INT8 quantized accuracy, `99.60%` prediction agreement (`40/10,000` disagreements), zero 26-bit accumulator overflows (`acc1` in `[-304,192, +269,370]`, `acc2` in `[-14,680, +9,276]`, re-computed from `model/data/*.hex` over all 10,000 test images).
 - **Hardware RTL Bit-Exact Verification**:
   - `tb_multiplier.py`: `65,536 / 65,536` signed INT8 pairs passed on both `ARRAY` and `BOOTH_WALLACE`.
   - `tb_requantizer.py`: `579 / 579` cases passed across shifts `0..25`.
   - `tb_systolic.py` & `tb_grid_mac.py`: `18 / 18` directed matrix-vector cases and `3 * 4 + 10 = 22` deterministic MAC passed.
   - `tb_k_tile_accum.py`: 3-K-tile signed accumulation (`[22, -20, 7, 108] -> [40, -31, 21, 90] -> [40, -37, 9, 110]`) and 196-K-tile multi-address retention/requantization passed.
   - `tb_layer1_golden.py` & `tb_mnist_infer.py`: `100%` bit-exact match against `model/golden_model.py` across all 32 Layer 1 accumulators, 32 Layer 1 activations, 10 Layer 2 logits (`[-2701, -3208, -1496, 3178, -8540, 4063, -4892, -2413, -3024, -1931]`), and `pred_class = 5` (`max_logit = 4063`) on `sample_img.hex` and 3 additional test vectors (including partial-tile unused-column poisoning).
+- **Independent rerun and 300-image RTL test** (`sim/tb_mnist_batch.py`): all targets re-run, and the first 300 MNIST test images run through `sysmac8_top` with 300 / 300 bit-exact against `golden_model.py` and 291 / 300 classified correctly. See `docs/verification_rerun/README.md`.
 - **Known Limitations**:
   - Weights (`w1`, `w2`), biases (`b1`, `b2`), and Layer 1 input pixels stream across top-level buses indexed by `(layer_idx, n_tile_idx, k_tile_idx)` rather than being stored in a dedicated 75 KB on-chip weight ROM.
   - Each image is processed at batch size 1. The controller schedule is documented as 25,495 FSM cycles, while the end-to-end Cocotb monitor reports 25,496 cycles per image.
